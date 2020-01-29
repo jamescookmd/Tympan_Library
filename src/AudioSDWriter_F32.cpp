@@ -2,14 +2,17 @@
 #include "AudioSDWriter_F32.h"
 
 void AudioSDWriter_F32::prepareSDforRecording(void) {
-  if (current_SD_state == STATE::UNPREPARED) {
-	if (buffSDWriter) {
-	  buffSDWriter->init(); //part of SDWriter, which is the base for BufferedSDWriter_I16
-	  if (PRINT_FULL_SD_TIMING) buffSDWriter->setPrintElapsedWriteTime(true); //for debugging.  make sure time is less than (audio_block_samples/sample_rate_Hz * 1e6) = 2900 usec for 128 samples at 44.1 kHz
+	if (current_SD_state == STATE::UNPREPARED) {
+		if (buffSDWriter) {
+			buffSDWriter->init(); //part of SDWriter, which is the base for BufferedSDWriter_I16
+			if (PRINT_FULL_SD_TIMING) buffSDWriter->setPrintElapsedWriteTime(true); //for debugging.  make sure time is less than (audio_block_samples/sample_rate_Hz * 1e6) = 2900 usec for 128 samples at 44.1 kHz
+		}
+		current_SD_state = STATE::STOPPED;
+	} else {
+		//Serial.println("AudioSDWriter_F32: prepareSDforRecording(): unexpected else");
 	}
-	current_SD_state = STATE::STOPPED;
-  }
-}
+};
+
 
 int AudioSDWriter_F32::deleteAllRecordings(void) {
 	//loop through all file names and erase if existing
@@ -67,13 +70,13 @@ int AudioSDWriter_F32::startRecording(void) {	  //make this the default "startRe
 	int return_val = 0;
 
 	//check to see if the SD has been initialized
-	if (current_SD_state == STATE::UNPREPARED) prepareSDforRecording();
+	if (current_SD_state == STATE::UNPREPARED) prepareSDforRecording();	
 
 	//check to see if SD is ready
 	if (current_SD_state == STATE::STOPPED) {
 		bool done = false;
 		while ((!done) && (recording_count < 998)) {
-			
+				
 			recording_count++;
 			if (recording_count < 1000) {
 				//make file name

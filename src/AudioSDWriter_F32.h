@@ -102,6 +102,9 @@ class AudioSDWriter_F32 : public AudioSDWriter, public AudioStream_F32 {
       setSerial(_serial_ptr);
       setWriteDataType(WriteDataType::INT16, _serial_ptr, _writeSizeBytes);
     }
+	void end(void) {
+		if (buffSDWriter) buffSDWriter->end();
+	}
 
     void setSerial(Print *_serial_ptr) {  serial_ptr = _serial_ptr;  }
     void setWriteDataType(WriteDataType type) {

@@ -37,7 +37,7 @@
 #include "input_i2s_quad_f32.h"
 #include "play_queue_f32.h"
 #include "record_queue_f32.h"
-#include "SdFat_Gre.h"
+//include "SdFat_Gre.h"
 #include "SDWriter.h"
 #include "synth_pinknoise_f32.h"
 #include "synth_waveform_F32.h"

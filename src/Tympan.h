@@ -125,7 +125,7 @@ class TympanPins { //Teensy 3.6 Pin Numbering
 		//#if defined(SEREMU_INTERFACE)
 		//	usb_seremu_class * getUSBSerial(void) { return USB_Serial; }
 		//#else
-			usb_serial_class * getUSBSerial(void) { return USB_Serial; }
+			Stream * getUSBSerial(void) { return USB_Serial; }
 		//#endif
 		HardwareSerial * getBTSerial(void) { return BT_Serial; }
 
@@ -143,7 +143,7 @@ class TympanPins { //Teensy 3.6 Pin Numbering
 		bool reversePot = false;
 		int enableStereoExtMicBias = NOT_A_FEATURE;
 		int AIC_Shield_enableStereoExtMicBias = NOT_A_FEATURE;
-		//#if defined(SEREMU_INTERFACE)
+		//#if defined(USB_MTPDISK)
 		//	usb_seremu_class *USB_Serial = &Serial;
 		//#else
 			usb_serial_class *USB_Serial = &Serial; //true for Rev_A/C/D
@@ -200,7 +200,8 @@ class TympanBase : public AudioControlAIC3206, public Print
 		//#if defined(SEREMU_INTERFACE)
 		//	usb_seremu_class *getUSBSerial(void) { return USB_Serial; }
 		//#else
-			usb_serial_class *getUSBSerial(void) { return USB_Serial; }
+			//usb_serial_class *getUSBSerial(void) { return USB_Serial; }
+			Stream *getUSBSerial(void) { return USB_Serial; }
 		//#endif
 		HardwareSerial *getBTSerial(void) { return BT_Serial; }
 		void beginBothSerial(void) { beginBothSerial(115200, pins.BT_serial_speed); }
@@ -208,7 +209,13 @@ class TympanBase : public AudioControlAIC3206, public Print
 			USB_Serial->begin(USB_speed); delay(50);
 			beginBluetoothSerial(BT_speed);
 		}
-		int USB_dtr() { return USB_Serial->dtr(); }
+		int USB_dtr() { 
+			#if defined(USB_MTPDISK)
+				return USB_Serial->dtr(); 
+			#else
+				return 1;
+			#endif
+		}
 
 		void beginBluetoothSerial(void) { beginBluetoothSerial(pins.BT_serial_speed); }
 		void beginBluetoothSerial(int BT_speed);
@@ -286,11 +293,11 @@ class TympanBase : public AudioControlAIC3206, public Print
 		  println();
 		}
 		
-		#if defined(SEREMU_INTERFACE)
-			usb_seremu_class *USB_Serial;
-		#else
+		//#if defined(USB_MTPDISK)
+		//	usb_seremu_class *USB_Serial;
+		//#else
 			usb_serial_class *USB_Serial;
-		#endif
+		//#endif
 		HardwareSerial *BT_Serial;
 
 	protected:

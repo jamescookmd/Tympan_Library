@@ -20,8 +20,24 @@
 #ifndef _SDWriter_h
 #define _SDWriter_h
 
+//#ifndef TYMPAN_USE_ORIG_SD
+//#define TYMPAN_USE_ORIG_SD (true)
+//#endif
+
 #include <arm_math.h>        //possibly only used for float32_t definition?
-#include <SdFat_Gre.h>       //originally from https://github.com/greiman/SdFat  but class names have been modified to prevent collisions with Teensy Audio/SD libraries
+//#if TYMPAN_USE_ORIG_SD
+//	#include <SdFat_Gre.h>       //originally from https://github.com/greiman/SdFat  but class names have been modified to prevent collisions with Teensy Audio/SD libraries
+//#else
+	
+	#include <SdFat-beta.h>       //https://github.com/greiman/SdFat-beta, within the repo, rename SdFat.h to SdFat-beta.h
+	#ifndef SDCARD_SS_PIN
+	const uint8_t SD_CS_PIN = SS;
+	#else  // SDCARD_SS_PIN
+	// Assume built-in SD is used.
+	const uint8_t SD_CS_PIN = SDCARD_SS_PIN;
+	#endif  // SDCARD_SS_PIN
+
+//#endif
 #include <Print.h>
 
 //set some constants
@@ -39,6 +55,8 @@ const int DEFAULT_SDWRITE_BYTES = 512; //target size for individual writes to th
 //  desired write type (float32 -> int16) and to handle buffering so that the optimal
 //  number of bytes are written at once, use one of the derived classes such as
 //  BufferedSDWriter
+
+
 class SDWriter : public Print
 {
   public:
@@ -52,8 +70,16 @@ class SDWriter : public Print
 
     void setup(void) { init(); }
     virtual void init() {
-      if (!sd.begin()) sd.errorHalt(serial_ptr, "SDWriter: begin failed");
+		//if (!sd.begin()) {
+		//if (!sd.begin(SdSpiConfig(SD_CS_PIN, DEDICATED_SPI, SD_SCK_MHZ(50)))) {
+		if (!sd.begin(SdioConfig(FIFO_SDIO))) {
+		  sd.errorHalt(serial_ptr, "SDWriter: begin failed");
+		}
     }
+	virtual void end() {
+		if (isFileOpen()) close();
+		sd.end();
+	}
 
     bool openAsWAV(char *fname) {
       bool returnVal = open(fname);
@@ -70,8 +96,8 @@ class SDWriter : public Print
         //a new recording, the old file must be deleted before new data is written.
         sd.remove(fname);
       }
-      file.open(fname, O_RDWR | O_CREAT | O_TRUNC);
-      //file.createContiguous(fname, PRE_ALLOCATE_SIZE); //alternative to the line above
+	  file.open(fname, O_RDWR | O_CREAT | O_TRUNC);
+	  //file.createContiguous(fname, PRE_ALLOCATE_SIZE); //alternative to the line above
       return isFileOpen();
     }
 
@@ -185,9 +211,15 @@ class SDWriter : public Print
     }
     
   protected:
-    //SdFatSdio sd; //slower
-    SdFatSdioEX sd; //faster
-    SdFile_Gre file;
+	//#if TYMPAN_USE_ORIG_SD
+	//	//original
+	//	//SdFatSdio sd; //slower
+	//	SdFatSdioEX sd; //faster
+	//	SdFile_Gre file;
+	//#else
+		SdFs sd;
+		FsFile file;
+	//#endif
     boolean flagPrintElapsedWriteTime = false;
     elapsedMicros usec;
     Print* serial_ptr = &Serial;
