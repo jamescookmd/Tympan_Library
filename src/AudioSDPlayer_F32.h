@@ -33,10 +33,19 @@
 #ifndef audioSDPlayer_F32_h_
 #define audioSDPlayer_F32_h_
 
+//#ifndef TYMPAN_USE_ORIG_SD
+//#pragma message "AudioSDPlayer: TYMPAN_USE_ORIG_SD not defined"
+//#define TYMPAN_USE_ORIG_SD (true)
+//#endif
+
 #include "Arduino.h"
 #include "AudioSettings_F32.h"
 #include "AudioStream_F32.h"
-#include <SdFat_Gre.h>   
+//#if TYMPAN_USE_ORIG_SD
+//#include <SdFat_Gre.h>   
+//#else
+#include <SdFat-beta.h>
+//#endif
 
 class AudioSDPlayer_F32 : public AudioStream_F32
 {
@@ -66,10 +75,16 @@ class AudioSDPlayer_F32 : public AudioStream_F32
       return sample_rate_Hz;
     }
     int setBlockSize(int block_size) { return audio_block_samples = block_size; };
+	uint8_t getState(void) { return (*(volatile uint8_t *)&state); }
   
   private:
-    SdFatSdioEX sd;
-    SdFile_Gre file;
+	//#if TYMPAN_USE_ORIG_SD
+	//	SdFatSdioEX sd;
+	//	SdFile_Gre file;
+	//#else
+		SdFs sd;
+		FsFile file;
+	//#endif
     bool consume(uint32_t size);
     bool parse_format(void);
     uint32_t header[10];    // temporary storage of wav header data

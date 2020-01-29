@@ -29,6 +29,8 @@
   * Changes are MIT License.  Use at your own risk.
 */
 
+#define PRINT_DEBUG false
+
 #include <Arduino.h>
 #include "AudioSDPlayer_F32.h"
 //#include <spi_interrupt.h>
@@ -57,7 +59,8 @@ void AudioSDPlayer_F32::init(void) {
 void AudioSDPlayer_F32::begin(void)
 {
   if (state == STATE_NOT_BEGUN) {
-    if (!(sd.begin())) {
+    //if (!(sd.begin())) {
+	if (!sd.begin(SdioConfig(FIFO_SDIO))) {
       Serial.println("AudioPlaySdWAV_F32: cannot open SD.");
       return;
     }
@@ -86,7 +89,11 @@ bool AudioSDPlayer_F32::play(const char *filename)
   stop();
 
   file.open(filename,O_READ);   //open for reading
-  if (!isFileOpen()) return false;
+	if (!isFileOpen()) {
+		Serial.print("AudioSDPlayer_F32: play: could not open file");
+		Serial.println(filename);
+		return false;
+	}
   
   buffer_length = 0;
   buffer_offset = 0;
@@ -219,8 +226,8 @@ bool AudioSDPlayer_F32::consume(uint32_t size)
   p = buffer + buffer_offset;
 start:
   if (size == 0) return false;
-#if 0
-  Serial.print("AudioSDPlayer_F32 consume, ");
+#if PRINT_DEBUG
+  Serial.print("AudioSDPlayer_F32 consume: ");
   Serial.print("size = ");
   Serial.print(size);
   Serial.print(", buffer_offset = ");
@@ -244,7 +251,7 @@ start:
     if (data_length > 0) return false;
     // parse the header...
     if (header[0] == 0x46464952 && header[2] == 0x45564157) {
-      //Serial.println("is wav file");
+      if (PRINT_DEBUG)  Serial.println("AudioSDPlayer_F32: consume: is wav file");
       if (header[3] == 0x20746D66) {
         // "fmt " header
         if (header[4] < 16) {
@@ -254,18 +261,20 @@ start:
         if (header[4] > sizeof(header)) {
           // if such .wav files exist, increasing the
           // size of header[] should accomodate them...
-          //Serial.println("WAVEFORMATEXTENSIBLE too long");
+          if (PRINT_DEBUG)  Serial.println("AudioSDPlayer_F32: consume: WAVEFORMATEXTENSIBLE too long");
           break;
         }
-        //Serial.println("header ok");
+        if (PRINT_DEBUG)  Serial.println("AudioSDPlayer_F32: consume: header ok");
         header_offset = 0;
         state = STATE_PARSE2;
       } else {
         // first chuck is something other than "fmt "
-        //Serial.print("skipping \"");
-        //Serial.printf("\" (%08X), ", __builtin_bswap32(header[3]));
-        //Serial.print(header[4]);
-        //Serial.println(" bytes");
+		#if (PRINT_DEBUG)
+			Serial.print("AudioSDPlayer_F32: consume: skipping \"");
+			Serial.printf("\" (%08X), ", __builtin_bswap32(header[3]));
+			Serial.print(header[4]);
+			Serial.println(" bytes");
+		#endif
         header_offset = 12;
         state = STATE_PARSE5;
       }
@@ -274,7 +283,7 @@ start:
       data_length = header[4];
       goto start;
     }
-    //Serial.println("unknown WAV header");
+    if (PRINT_DEBUG) Serial.println("AudioSDPlayer_F32: consume: unknown WAV header");
     break;
 
     // check & extract key audio parameters
@@ -287,7 +296,7 @@ start:
     data_length -= len;
     if (data_length > 0) return false;
     if (parse_format()) {
-      //Serial.println("audio format ok");
+      if (PRINT_DEBUG)  Serial.println("AudioSDPlayer_F32: consume: audio format ok");
       p += len;
       size -= len;
       data_length = 8;
@@ -295,7 +304,7 @@ start:
       state = STATE_PARSE3;
       goto start;
     }
-    //Serial.println("unknown audio format");
+    if (PRINT_DEBUG)  Serial.println("AudioSDPlayer_F32: consume: unknown audio format");
     break;
 
     // find the data chunk
@@ -307,16 +316,17 @@ start:
     buffer_offset += len;
     data_length -= len;
     if (data_length > 0) return false;
-    //Serial.print("chunk id = ");
-    //Serial.print(header[0], HEX);
-    //Serial.print(", length = ");
-    //Serial.println(header[1]);
+	#if (PRINT_DEBUG)
+		Serial.print("chunk id = ");
+		Serial.print(header[0], HEX);
+		Serial.print(", length = ");
+		Serial.println(header[1]);
+	#endif
     p += len;
     size -= len;
     data_length = header[1];
     if (header[0] == 0x61746164) {
-      //Serial.print("wav: found data chunk, len=");
-      //Serial.println(data_length);
+	  if (PRINT_DEBUG) { Serial.print("wav: found data chunk, len="); Serial.println(data_length);}
       // TODO: verify offset in file is an even number
       // as required by WAV format.  abort if odd.  Code
       // below will depend upon this and fail if not even.
@@ -543,13 +553,12 @@ bool AudioSDPlayer_F32::parse_format(void)
   //uint16_t bits;
 
   format = header[0];
-  //Serial.print("  format = ");
-  //Serial.println(format);
+  if (PRINT_DEBUG) {Serial.print("AudioSDPlayer: parse_format: format = "); Serial.println(format);}
   if (format != 1) return false;
 
   rate = header[1];
-  //Serial.print("  rate = ");
-  //Serial.println(rate);
+  if (PRINT_DEBUG) Serial.print("AudioSDPlayer: parse_format: rate = ");
+  if (PRINT_DEBUG) Serial.println(rate);
   
   if (rate == 96000) {
     //b2m = B2M_96000;
@@ -564,7 +573,9 @@ bool AudioSDPlayer_F32::parse_format(void)
     //b2m = B2M_11025;
     num |= 4;
   } else {
-    return false;
+	if (PRINT_DEBUG) { Serial.print("AudioSDPlayer: parse_format: unknown sample rate :"); Serial.println(rate); }
+	if (rate < 20000) { num |= 4; } //mimic the lines above???
+    //return false; //let's NOT return false here.  Let's just keep going
   }
 
   channels = header[0] >> 16;
