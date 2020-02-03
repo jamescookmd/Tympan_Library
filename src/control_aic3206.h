@@ -37,9 +37,9 @@
 #define TYMPAN_MIC_BIAS_VSUPPLY         4
 #define TYMPAN_DEFAULT_MIC_BIAS TYMPAN_MIC_BIAS_2_5
 
-#define BOTH_CHAN 0
-#define LEFT_CHAN 1
-#define RIGHT_CHAN 2
+//define AIC3206_LEFT_CHAN 0
+//define AIC3206_RIGHT_CHAN 1
+//define AIC3206_BOTH_CHAN 10
 
 //define AIC3206_DEFAULT_I2C_BUS 0   //bus zero is &Wire
 #define AIC3206_DEFAULT_RESET_PIN 21
@@ -71,6 +71,7 @@ public:
 		setI2Cbus(i2cBusIndex);
 		debugToSerial = _debugToSerial;
 	}
+	enum CHANNEL_IND {LEFT=0, RIGHT=1, BOTH=10};
 	bool enable(void);
 	bool disable(void);
 	bool outputSelect(int n, bool flag_full = true); //flag_full is whether to do a full reconfiguration.  True is more complete but false is faster. 
@@ -81,6 +82,7 @@ public:
 	float volume_dB(float vol_left_dB, int chan); //set each channel seperately (0 = left; 1 = right)
 	bool inputLevel(float n);  //dummy to be compatible with Teensy Audio Library
 	bool inputSelect(int n);
+	bool inputSelect(int n, int chan);
 	float applyLimitsOnInputGainSetting(float gain_dB);  
 	float setInputGain_dB(float gain_dB);   //set both channels to the same gain
 	float setInputGain_dB(float gain_dB, int chan); //set each channel seperately (0 = left; 1 = right)

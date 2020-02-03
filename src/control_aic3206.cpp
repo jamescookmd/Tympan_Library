@@ -208,61 +208,76 @@ bool AudioControlAIC3206::inputLevel(float volume) {
   return false;
 }
 
-bool AudioControlAIC3206::inputSelect(int n) {
-  if ( (n == TYMPAN_INPUT_LINE_IN) || (n == TYMPAN_INPUT_BT_AUDIO) ) {
-    // USE LINE IN SOLDER PADS
-	aic_goToPage(TYMPAN_MICPGA_PAGE);
-    aic_writeRegister(TYMPAN_MICPGA_LEFT_POSITIVE_REG, TYMPAN_MIC_ROUTING_POSITIVE_IN1 & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
-    aic_writeRegister(TYMPAN_MICPGA_LEFT_NEGATIVE_REG, TYMPAN_MIC_ROUTING_NEGATIVE_CM_TO_CM1L & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
-    aic_writeRegister(TYMPAN_MICPGA_RIGHT_POSITIVE_REG, TYMPAN_MIC_ROUTING_POSITIVE_IN1 & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
-    aic_writeRegister(TYMPAN_MICPGA_RIGHT_NEGATIVE_REG, TYMPAN_MIC_ROUTING_NEGATIVE_CM_TO_CM1L & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
-    // BIAS OFF
-    setMicBias(TYMPAN_MIC_BIAS_OFF);
+bool AudioControlAIC3206::inputSelect(int n) { return inputSelect(n,BOTH); }
+bool AudioControlAIC3206::inputSelect(int n, int chan_index) {
+	bool change_left = (chan_index == BOTH) || (chan_index == LEFT);
+	bool change_right = (chan_index == BOTH) || (chan_index == RIGHT);
 	
+	if ( (n == TYMPAN_INPUT_LINE_IN) || (n == TYMPAN_INPUT_BT_AUDIO) ) {
+		// USE LINE IN SOLDER PADS
+		aic_goToPage(TYMPAN_MICPGA_PAGE);
+		if (change_left) {
+			aic_writeRegister(TYMPAN_MICPGA_LEFT_POSITIVE_REG, TYMPAN_MIC_ROUTING_POSITIVE_IN1 & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
+			aic_writeRegister(TYMPAN_MICPGA_LEFT_NEGATIVE_REG, TYMPAN_MIC_ROUTING_NEGATIVE_CM_TO_CM1L & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
+		}
+		if (change_right) {
+			aic_writeRegister(TYMPAN_MICPGA_RIGHT_POSITIVE_REG, TYMPAN_MIC_ROUTING_POSITIVE_IN1 & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
+			aic_writeRegister(TYMPAN_MICPGA_RIGHT_NEGATIVE_REG, TYMPAN_MIC_ROUTING_NEGATIVE_CM_TO_CM1L & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
+		}
+		// BIAS OFF
+		setMicBias(TYMPAN_MIC_BIAS_OFF);
 
-    if (debugToSerial) Serial.println("Set Audio Input to Line In");
-    return true;
-  } else if (n == TYMPAN_INPUT_JACK_AS_MIC) {
-    // mic-jack = IN3
-	aic_goToPage(TYMPAN_MICPGA_PAGE);
-    aic_writeRegister(TYMPAN_MICPGA_LEFT_POSITIVE_REG, TYMPAN_MIC_ROUTING_POSITIVE_IN3 & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
-    aic_writeRegister(TYMPAN_MICPGA_LEFT_NEGATIVE_REG, TYMPAN_MIC_ROUTING_NEGATIVE_CM_TO_CM1L & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
-    aic_writeRegister(TYMPAN_MICPGA_RIGHT_POSITIVE_REG, TYMPAN_MIC_ROUTING_POSITIVE_IN3 & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
-    aic_writeRegister(TYMPAN_MICPGA_RIGHT_NEGATIVE_REG, TYMPAN_MIC_ROUTING_NEGATIVE_CM_TO_CM1L & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
-    // BIAS on, using default
-    setMicBias(TYMPAN_DEFAULT_MIC_BIAS);
-
-    if (debugToSerial) Serial.println("Set Audio Input to JACK AS MIC, BIAS SET TO DEFAULT 2.5V");
-    return true;
-  } else if (n == TYMPAN_INPUT_JACK_AS_LINEIN) {
-    // 1
-    // mic-jack = IN3
-	aic_goToPage(TYMPAN_MICPGA_PAGE);
-    aic_writeRegister(TYMPAN_MICPGA_LEFT_POSITIVE_REG, TYMPAN_MIC_ROUTING_POSITIVE_IN3 & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
-    aic_writeRegister(TYMPAN_MICPGA_LEFT_NEGATIVE_REG, TYMPAN_MIC_ROUTING_NEGATIVE_CM_TO_CM1L & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
-    aic_writeRegister(TYMPAN_MICPGA_RIGHT_POSITIVE_REG, TYMPAN_MIC_ROUTING_POSITIVE_IN3 & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
-    aic_writeRegister(TYMPAN_MICPGA_RIGHT_NEGATIVE_REG, TYMPAN_MIC_ROUTING_NEGATIVE_CM_TO_CM1L & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
-    // BIAS Off
-    setMicBias(TYMPAN_MIC_BIAS_OFF);
-
-    if (debugToSerial) Serial.println("Set Audio Input to JACK AS LINEIN, BIAS OFF");
-    return true;
-  } else if (n == TYMPAN_INPUT_ON_BOARD_MIC) {
-    // on-board = IN2
-	aic_goToPage(TYMPAN_MICPGA_PAGE);
-    aic_writeRegister(TYMPAN_MICPGA_LEFT_POSITIVE_REG, TYMPAN_MIC_ROUTING_POSITIVE_IN2 & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
-    aic_writeRegister(TYMPAN_MICPGA_LEFT_NEGATIVE_REG, TYMPAN_MIC_ROUTING_NEGATIVE_CM_TO_CM1L & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
-    aic_writeRegister(TYMPAN_MICPGA_RIGHT_POSITIVE_REG, TYMPAN_MIC_ROUTING_POSITIVE_IN2 & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
-    aic_writeRegister(TYMPAN_MICPGA_RIGHT_NEGATIVE_REG, TYMPAN_MIC_ROUTING_NEGATIVE_CM_TO_CM1L & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
-    // BIAS Off
-    setMicBias(TYMPAN_MIC_BIAS_OFF);
-    if (debugToSerial) Serial.println("Set Audio Input to Tympan On-Board MIC, BIAS OFF");
-
-    return true;
-  }
-  Serial.print("AudioControlAIC3206: ERROR: Unable to Select Input - Value not supported: ");
-  Serial.println(n);
-  return false;
+		if (debugToSerial) Serial.println("Set Audio Input to Line In");
+		return true;
+	} else if (n == TYMPAN_INPUT_JACK_AS_MIC) {
+		// mic-jack = IN3
+		aic_goToPage(TYMPAN_MICPGA_PAGE);
+		if (change_left) {
+			aic_writeRegister(TYMPAN_MICPGA_LEFT_POSITIVE_REG, TYMPAN_MIC_ROUTING_POSITIVE_IN3 & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
+			aic_writeRegister(TYMPAN_MICPGA_LEFT_NEGATIVE_REG, TYMPAN_MIC_ROUTING_NEGATIVE_CM_TO_CM1L & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
+		}
+		if (change_right) {
+			aic_writeRegister(TYMPAN_MICPGA_RIGHT_POSITIVE_REG, TYMPAN_MIC_ROUTING_POSITIVE_IN3 & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
+			aic_writeRegister(TYMPAN_MICPGA_RIGHT_NEGATIVE_REG, TYMPAN_MIC_ROUTING_NEGATIVE_CM_TO_CM1L & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
+		}
+		// BIAS on, using default
+		setMicBias(TYMPAN_DEFAULT_MIC_BIAS);
+		if (debugToSerial) Serial.println("Set Audio Input to JACK AS MIC, BIAS SET TO DEFAULT 2.5V");
+		return true;
+	} else if (n == TYMPAN_INPUT_JACK_AS_LINEIN) {
+		// mic-jack = IN3
+		aic_goToPage(TYMPAN_MICPGA_PAGE);
+		if (change_left) {
+			aic_writeRegister(TYMPAN_MICPGA_LEFT_POSITIVE_REG, TYMPAN_MIC_ROUTING_POSITIVE_IN3 & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
+			aic_writeRegister(TYMPAN_MICPGA_LEFT_NEGATIVE_REG, TYMPAN_MIC_ROUTING_NEGATIVE_CM_TO_CM1L & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
+		}
+		if (change_right) {
+			aic_writeRegister(TYMPAN_MICPGA_RIGHT_POSITIVE_REG, TYMPAN_MIC_ROUTING_POSITIVE_IN3 & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
+			aic_writeRegister(TYMPAN_MICPGA_RIGHT_NEGATIVE_REG, TYMPAN_MIC_ROUTING_NEGATIVE_CM_TO_CM1L & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
+		}
+		// BIAS Off
+		setMicBias(TYMPAN_MIC_BIAS_OFF);
+		if (debugToSerial) Serial.println("Set Audio Input to JACK AS LINEIN, BIAS OFF");
+		return true;
+	} else if (n == TYMPAN_INPUT_ON_BOARD_MIC) {
+		// on-board = IN2
+		aic_goToPage(TYMPAN_MICPGA_PAGE);
+		if (change_left) {
+			aic_writeRegister(TYMPAN_MICPGA_LEFT_POSITIVE_REG, TYMPAN_MIC_ROUTING_POSITIVE_IN2 & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
+			aic_writeRegister(TYMPAN_MICPGA_LEFT_NEGATIVE_REG, TYMPAN_MIC_ROUTING_NEGATIVE_CM_TO_CM1L & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
+		}
+		if (change_right) {
+			aic_writeRegister(TYMPAN_MICPGA_RIGHT_POSITIVE_REG, TYMPAN_MIC_ROUTING_POSITIVE_IN2 & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
+			aic_writeRegister(TYMPAN_MICPGA_RIGHT_NEGATIVE_REG, TYMPAN_MIC_ROUTING_NEGATIVE_CM_TO_CM1L & TYMPAN_MIC_ROUTING_RESISTANCE_DEFAULT);
+		}
+		// BIAS Off
+		setMicBias(TYMPAN_MIC_BIAS_OFF);
+		if (debugToSerial) Serial.println("Set Audio Input to Tympan On-Board MIC, BIAS OFF");
+		return true;
+	}
+	Serial.print("AudioControlAIC3206: ERROR: Unable to Select Input - Value not supported: ");
+	Serial.println(n);
+	return false;
 }
 
 bool AudioControlAIC3206::setMicBias(int n) {
@@ -831,7 +846,8 @@ float AudioControlAIC3206::setBiquadOnADC(int type, float cutoff_Hz, float sampl
 	//
 	// type is type of filter: 1 = Lowpass, 2=highpass
 	// cutoff_Hz is the cutoff frequency in Hz
-	// chanIndex is 0=both, 1=left, 2=right
+	// chanIndex is 0=left, 1=right, 10 = both
+	//   (see also AudioControlAIC3206::LEFT, AudioControlAIC3206::RIGHT, AudioControlAIC3206::BOTH)
 	// biquadIndex is 0-4 for biquad A through biquad B, depending upon ADC mode
 	
 	const int ncoeff = 5;
@@ -970,17 +986,17 @@ int AudioControlAIC3206::setBiquadCoeffOnADC(int chanIndex, int biquadIndex, uin
 	int chan_offset;
 	
 	switch (chanIndex) {
-		case BOTH_CHAN:
+		case BOTH:
 			chan_offset = 0;
 			writeBiquadCoeff(coeff_uint32, page_reg_table + chan_offset + biquadIndex*rows_per_biquad*table_ncol,table_ncol);		
 			chan_offset = 1;
 			writeBiquadCoeff(coeff_uint32, page_reg_table + chan_offset + biquadIndex*rows_per_biquad*table_ncol,table_ncol);
 			break;
-		case LEFT_CHAN:
+		case LEFT:
 			chan_offset = 0;
 			writeBiquadCoeff(coeff_uint32, page_reg_table + chan_offset + biquadIndex*rows_per_biquad*table_ncol,table_ncol);
 			break;
-		case RIGHT_CHAN:
+		case RIGHT:
 			chan_offset = 1;
 			writeBiquadCoeff(coeff_uint32, page_reg_table + chan_offset + biquadIndex*rows_per_biquad*table_ncol,table_ncol);
 			break;
@@ -1041,7 +1057,7 @@ void AudioControlAIC3206::setHPFonADC(bool enable, float cutoff_Hz, float fs_Hz)
 		coeff[0] = 0x7FFFFFFF; coeff[1] = 0; coeff[2]=0;
 	}
 	
-	setHpfIIRCoeffOnADC(BOTH_CHAN, coeff); //needs twos-compliment
+	setHpfIIRCoeffOnADC(BOTH, coeff); //needs twos-compliment
 }
 
 
@@ -1069,10 +1085,10 @@ void AudioControlAIC3206::setHpfIIRCoeffOnADC(int chan, uint32_t *coeff) {
 	uint32_t prev_state = aic_readPage(0x00,0x51);
 	aic_writePage(0x00,0x51,prev_state & (0b00111111));  //clear first two bits
 	
-	if (chan == BOTH_CHAN) {
+	if (chan == BOTH) {
 		setHpfIIRCoeffOnADC_Left(coeff);
 		setHpfIIRCoeffOnADC_Right(coeff);
-	} else if (chan == LEFT_CHAN) {
+	} else if (chan == LEFT) {
 		setHpfIIRCoeffOnADC_Left(coeff);
 	} else {
 		setHpfIIRCoeffOnADC_Right(coeff);
